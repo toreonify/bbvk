@@ -1,5 +1,5 @@
 # BBVK
--
+
 Status: work in progress
 
 VK client/messenger for BlackBerry OS 4.5 devices.
