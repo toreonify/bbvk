@@ -1,0 +1,57 @@
+<project default="build">
+	<taskdef resource="bb-ant-defs.xml" />
+
+	<property name="jde.home" location="/Users/toreonify/eclipse/tools/bb-sdk" />
+	<property name="simulator.home" location="/Users/toreonify/eclipse/tools/bb-sdk/simulator" />
+	
+	<property name="src.dir" location="src" />
+	<property name="build.dir" location="build" />
+	
+	<property name="app.type" value="cldc" />
+	<property name="project.name" value="VK client app"/>
+	<property name="cod.name" value="BBVK" />
+	
+	<path id="import.jars">
+		<fileset dir="../JSON/build" includes="*.jar" />
+		<fileset dir="../BBVK_Options/build" includes="*.jar" />
+    </path>
+
+	<target name="build">
+		<mkdir dir="${build.dir}" />
+		<mkdir dir="${build.dir}/img" />
+		
+		<copy todir="${build.dir}/img">
+			<fileset dir="${src.dir}/../img" includes="*.png" />
+		</copy>
+		
+		<rapc output="${cod.name}" destdir="${build.dir}" srcdir="${src.dir}">
+			<jdp type="${app.type}" title="VK client" vendor="toreonify" version="0.1" icon="../img/vk_logo.png"/>
+			<import refid="import.jars" />
+		</rapc>
+	</target>
+
+	<target name="sign">
+		<sigtool codfile="${build.dir}/${cod.name}.cod" />
+	</target>
+
+	<target name="clean">
+		<delete dir="${build.dir}" />
+	</target>
+
+	<target name="upload" depends="build">
+		<copy todir="${simulator.home}">
+			<fileset dir="${build.dir}" includes="*.cod,*.cso,*.debug,*.jad,*.jar" />
+		</copy>
+		<exec executable="/bin/sh">
+			<arg value="-c" />
+			<arg value="${simulator.home}/8320.sh" />
+		</exec>
+	</target>
+	
+	<target name="upload-device" depends="build">
+		<exec executable="${jde.home}/bin/javaloader">
+			<arg value="load" />
+			<arg value="${build.dir}/${cod.name}.cod" />
+		</exec>
+	</target>
+</project>

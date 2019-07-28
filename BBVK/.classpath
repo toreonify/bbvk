@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/BlackBerry API"/>
+	<classpathentry kind="lib" path="/../JSON/build/JSONLib.jar"/>
+	<classpathentry kind="lib" path="/../BBVK_Options/build/BBVK_Options.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

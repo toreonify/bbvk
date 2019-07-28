@@ -1,0 +1,38 @@
+<project default="build">
+	<taskdef resource="bb-ant-defs.xml" />
+
+	<property name="jde.home" location="/Users/toreonify/eclipse/tools/bb-sdk" />
+	<property name="simulator.home" location="/Users/toreonify/eclipse/tools/bb-sdk/simulator" />
+	
+	<property name="src.dir" location="src" />
+	<property name="build.dir" location="build" />
+	
+	<property name="app.type" value="library" />
+	<property name="project.name" value="BBVK Options"/>
+	<property name="cod.name" value="BBVK_Options" />
+	
+	<target name="build">
+		<mkdir dir="${build.dir}" />
+		
+		<rapc output="${cod.name}" destdir="${build.dir}" srcdir="${src.dir}">
+			<jdp type="${app.type}" title="BBVK Options" vendor="toreonify" version="0.1" runonstartup="true"/>
+		</rapc>
+	</target>
+	
+	<target name="upload" depends="build">
+		<copy todir="${simulator.home}">
+			<fileset dir="${build.dir}" includes="*.cod,*.cso,*.debug,*.jad,*.jar" />
+		</copy>
+	</target>
+	
+	<target name="upload-device" depends="build">
+			<exec executable="${jde.home}/bin/javaloader">
+				<arg value="load" />
+				<arg value="${build.dir}/${cod.name}.cod" />
+			</exec>
+		</target>
+
+	<target name="clean">
+		<delete dir="${build.dir}" />
+	</target>
+</project>
