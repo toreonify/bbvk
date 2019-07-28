@@ -15,8 +15,11 @@
 		<fileset dir="../JSON/build" includes="*.jar" />
 		<fileset dir="../BBVK_Options/build" includes="*.jar" />
     </path>
+	
+	<target name="build" depends="compile,upload">
+	</target>
 
-	<target name="build">
+	<target name="compile">
 		<mkdir dir="${build.dir}" />
 		<mkdir dir="${build.dir}/img" />
 		
@@ -38,10 +41,13 @@
 		<delete dir="${build.dir}" />
 	</target>
 
-	<target name="upload" depends="build">
+	<target name="upload" depends="compile">
 		<copy todir="${simulator.home}">
 			<fileset dir="${build.dir}" includes="*.cod,*.cso,*.debug,*.jad,*.jar" />
 		</copy>
+	</target>
+		
+	<target name="run" depends="upload">
 		<exec executable="/bin/sh">
 			<arg value="-c" />
 			<arg value="${simulator.home}/8320.sh" />

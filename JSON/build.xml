@@ -19,6 +19,12 @@
 		</rapc>
 	</target>
 	
+	<target name="upload" depends="build">
+		<copy todir="${simulator.home}">
+			<fileset dir="${build.dir}" includes="*.cod,*.cso,*.debug,*.jad,*.jar" />
+		</copy>
+	</target>
+	
 	<target name="upload-device" depends="build">
 				<exec executable="${jde.home}/bin/javaloader">
 					<arg value="load" />

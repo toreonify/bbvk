@@ -13,14 +13,9 @@ import net.rim.device.api.ui.UiApplication;
 import net.rim.device.api.ui.component.LabelField;
 import net.rim.device.api.ui.container.MainScreen;
 
-public class MessagesScreen extends MainScreen implements FieldChangeListener {
-	private UiApplication _app;
-	private Api _api;
-	
-	public MessagesScreen() {
-		_app = UiApplication.getUiApplication();
-		_api = Api.getInstance();
-		
+public class MessagesScreen extends VKScreen implements FieldChangeListener {	
+	public MessagesScreen() {	
+		super();
 		setTitle("Messages");
 		
 		JSONObject conversations = null;
@@ -47,5 +42,4 @@ public class MessagesScreen extends MainScreen implements FieldChangeListener {
 		// TODO Auto-generated method stub
 		
 	}
-
 }

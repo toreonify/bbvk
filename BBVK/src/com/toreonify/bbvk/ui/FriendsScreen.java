@@ -13,24 +13,20 @@ import com.toreonify.bbvk.net.Requesting;
 
 import net.rim.device.api.system.Bitmap;
 import net.rim.device.api.system.EncodedImage;
+import net.rim.device.api.system.KeypadListener;
 import net.rim.device.api.ui.Graphics;
 import net.rim.device.api.ui.UiApplication;
 import net.rim.device.api.ui.component.ListField;
 import net.rim.device.api.ui.component.ListFieldCallback;
-import net.rim.device.api.ui.container.MainScreen;
 
-public class FriendsScreen extends MainScreen implements ListFieldCallback, Requesting {
-	private UiApplication _app;
-	private Api _api;
+public class FriendsScreen extends VKScreen implements ListFieldCallback, Requesting {
 	private ListField _friendsList;	
 	
 	private JSONArray _friends;
 	private EncodedImage[] _avatars;
 	
 	public FriendsScreen() {
-		_app = UiApplication.getUiApplication();
-		_api = Api.getInstance();
-		
+		super();
 		setTitle("Friends");
 
 		JSONObject friendsInfo = null;
@@ -129,4 +125,33 @@ public class FriendsScreen extends MainScreen implements ListFieldCallback, Requ
 		}
 	}
 
+	protected boolean navigationClick(int status, int time) {
+		if ((status & KeypadListener.STATUS_FOUR_WAY) != 0) {
+			int index = _friendsList.getSelectedIndex();
+			JSONObject friend = null;
+			
+			try {
+				friend = _friends.getJSONObject(index);
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			String id = null;
+			if (friend != null) {
+				try {
+					id = friend.getString("id");
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
+			if (id != null) {
+				_app.pushScreen(new ProfileScreen(id));
+			}
+		}
+		
+		return true;
+	}
 }
