@@ -15,7 +15,7 @@ public class ImageFetchThread extends Thread
     /**
      * Callback browser field.
      */
-    private Requesting _requesting;
+    private RequestingImage _requesting;
     
     /**
      * Images to retrieve.
@@ -44,7 +44,7 @@ public class ImageFetchThread extends Thread
      * @param resource - resource to retrieve.
      * @param referrer - call back browsr field.
      */
-    public static void enqueue(RequestedImage resource, Requesting referrer) 
+    public static void enqueue(RequestedImage resource, RequestingImage referrer) 
     {
         if (resource == null) 
         {

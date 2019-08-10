@@ -4,6 +4,7 @@ import org.json.me.JSONArray;
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
 
+import com.toreonify.bbvk.JSONSearch;
 import com.toreonify.bbvk.api.ApiFetchThread;
 import com.toreonify.bbvk.api.ApiHelper;
 import com.toreonify.bbvk.api.RequestedApi;
@@ -19,25 +20,26 @@ import net.rim.device.api.ui.Graphics;
 import net.rim.device.api.ui.component.ListField;
 import net.rim.device.api.ui.component.ListFieldCallback;
 
-public class FriendsScreen extends VKScreen implements ListFieldCallback, RequestingImage, RequestingApi {
-	private ListField _friendsList;	
+public class ConversationsScreen extends VKScreen implements ListFieldCallback, RequestingImage, RequestingApi {
+	private ListField _conversationsList;	
 	
-	private JSONArray _friends;
+	private JSONArray _conversations;
+	private JSONArray _profiles;
 	private EncodedImage[] _avatars;
 	
-	public FriendsScreen() {
+	public ConversationsScreen() {
 		super();
-		setTitle("Friends – loading...");
+		setTitle("Conversations – loading...");
 
-		_friendsList = new ListField();
-		_friendsList.setCallback(this);
-		_friendsList.setRowHeight(50); // 50 = size of avatar
+		_conversationsList = new ListField();
+		_conversationsList.setCallback(this);
+		_conversationsList.setRowHeight(50); // 50 = size of avatar
 		
-		add(_friendsList);
+		add(_conversationsList);
 		
 		RequestedApi request = new RequestedApi();
-		request.urlTemplate = ApiHelper.API_FRIENDS_URL;
-		request.callArgs = null;
+		request.urlTemplate = ApiHelper.API_CONVERSATIONS_URL;
+		request.callArgs = new Object[] {"0", "10", "all"};
 		request.type = RequestedApi.OBJECT;
 		
 		ApiFetchThread.enqueue(request, this);
@@ -45,17 +47,22 @@ public class FriendsScreen extends VKScreen implements ListFieldCallback, Reques
 	
 	public void drawListRow(ListField listField, Graphics graphics, int index, int y, int width) {
 		JSONObject selected = null;
+		JSONObject peer = null;
 		try {
-			selected = (JSONObject) _friends.get(index);
-			String name = selected.getString("first_name") + " " + selected.getString("last_name");
-			String status = "offline";
+			selected = (JSONObject) _conversations.get(index);
+			JSONObject conversation = selected.getJSONObject("conversation");
+			JSONObject lastMessage = selected.getJSONObject("last_message");
 			
-			if (selected.getInt("online") == 1) {
-				status = "online";
-			}
+			int peerId = lastMessage.getInt("peer_id");
+			peer = JSONSearch.byInt(_profiles, "id", peerId);
 			
-			graphics.drawText(name, 54, y);
-			graphics.drawText(status, 54, y + (16 + 8));
+			if (peer != null) {
+				String name = peer.getString("first_name") + " " + peer.getString("last_name");
+				String messageText = lastMessage.getString("text");
+				
+				graphics.drawText(name, 54, y);
+				graphics.drawText(messageText, 54, y + (16 + 8));	
+			}			
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -67,11 +74,11 @@ public class FriendsScreen extends VKScreen implements ListFieldCallback, Reques
 			Bitmap bitmap = _avatars[index].getBitmap();
 			graphics.drawBitmap(0, y, 50, 50, bitmap, 0, 0);
 		} else {
-			if (selected != null)
+			if (peer != null)
 				try {
 					RequestedImage avatar = new RequestedImage();
 					avatar.tag = Integer.toString(index);
-					avatar.url = selected.getString("photo_50");
+					avatar.url = peer.getString("photo_50");
 					
 					ImageFetchThread.enqueue(avatar, this);
 				} catch (JSONException e) {
@@ -83,7 +90,7 @@ public class FriendsScreen extends VKScreen implements ListFieldCallback, Reques
 
 	public Object get(ListField listField, int index) {
 		try {
-			return _friends.getJSONObject(index);
+			return _conversations.getJSONObject(index);
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -106,55 +113,60 @@ public class FriendsScreen extends VKScreen implements ListFieldCallback, Reques
 			synchronized (_avatars) {
 				_avatars[index] = result;
 			}
-			_friendsList.invalidate(index);
+			_conversationsList.invalidate(index);
 		}
 	}
 
 	protected boolean navigationClick(int status, int time) {
 		if ((status & KeypadListener.STATUS_FOUR_WAY) != 0) {
-			int index = _friendsList.getSelectedIndex();
-			JSONObject friend = null;
+			int index = _conversationsList.getSelectedIndex();
+			JSONObject peer = null;
 			
-			try {
-				friend = _friends.getJSONObject(index);
-			} catch (JSONException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+//			try {
+//				//friend = _friends.getJSONObject(index);
+//			} catch (JSONException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
 			
-			String id = null;
-			if (friend != null) {
-				try {
-					id = friend.getString("id");
-				} catch (JSONException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			
-			if (id != null) {
-				_app.pushScreen(new ProfileScreen(id));
-			}
+//			String id = null;
+//			if (friend != null) {
+//				try {
+//					id = friend.getString("id");
+//				} catch (JSONException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//			}
+//			
+//			if (id != null) {
+//				_app.pushScreen(new ProfileScreen(id));
+//			}
 		}
 		
 		return true;
 	}
 
 	public void setResponse(RequestedApi info, Object result) {
+		JSONObject conversationsInfo = null;
+		
 		if (result != null) {
-			JSONObject friendsInfo = (JSONObject) result;
-			
+			conversationsInfo = (JSONObject)result;
+		}
+		
+		if (conversationsInfo != null) {
 			try {
-				final int count = friendsInfo.getInt("count");
-				final JSONArray items = friendsInfo.getJSONArray("items");
+				final int count = conversationsInfo.getInt("count");
+				
+				_conversations = conversationsInfo.getJSONArray("items");
+				_profiles = conversationsInfo.getJSONArray("profiles");
+				
+				_avatars = new EncodedImage[count];
 				
 				_app.invokeAndWait(new Runnable() {
 					public void run() {
-						_friendsList.setSize(count);
-						_friends = items;
-						_avatars = new EncodedImage[count];
-						
-						setTitle("Friends – " + Integer.toString(count) + " total");	
+						_conversationsList.setSize(count);
+						setTitle("Conversations – " + Integer.toString(count) + " total");					
 					}
 				});
 			} catch (JSONException e) {

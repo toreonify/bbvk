@@ -4,38 +4,37 @@ import org.json.me.JSONArray;
 import org.json.me.JSONException;
 import org.json.me.JSONObject;
 
-import com.toreonify.bbvk.api.Api;
-import com.toreonify.bbvk.api.ApiException;
+import com.toreonify.bbvk.api.ApiFetchThread;
 import com.toreonify.bbvk.api.ApiHelper;
+import com.toreonify.bbvk.api.RequestedApi;
+import com.toreonify.bbvk.api.RequestingApi;
 import com.toreonify.bbvk.net.ImageFetchThread;
 import com.toreonify.bbvk.net.RequestedImage;
-import com.toreonify.bbvk.net.Requesting;
+import com.toreonify.bbvk.net.RequestingImage;
 
 import net.rim.device.api.system.Bitmap;
 import net.rim.device.api.system.EncodedImage;
 import net.rim.device.api.system.KeypadListener;
 import net.rim.device.api.ui.Graphics;
 import net.rim.device.api.ui.Manager;
-import net.rim.device.api.ui.UiApplication;
 import net.rim.device.api.ui.component.BitmapField;
-import net.rim.device.api.ui.component.Dialog;
 import net.rim.device.api.ui.component.LabelField;
 import net.rim.device.api.ui.component.ListField;
 import net.rim.device.api.ui.component.ListFieldCallback;
-import net.rim.device.api.ui.component.Status;
 import net.rim.device.api.ui.container.HorizontalFieldManager;
-import net.rim.device.api.ui.container.MainScreen;
 import net.rim.device.api.util.Arrays;
 import net.rim.device.api.util.StringComparator;
 
 
-public class AppScreen extends VKScreen implements ListFieldCallback, Requesting {
+public class AppScreen extends VKScreen implements ListFieldCallback, RequestingImage, RequestingApi {
+	private HorizontalFieldManager _upperShelf;
 	private ListField _actionsList;
+		
 	private BitmapField _avatar;
 	private LabelField _name;
 	
 	private final String[] _items = {
-			"Messages",
+			"Conversations",
 			"Friends",
 			"Exit"
 	};
@@ -44,69 +43,33 @@ public class AppScreen extends VKScreen implements ListFieldCallback, Requesting
 		super();
 		setTitle("VK");
 
-		HorizontalFieldManager upperShelf = new HorizontalFieldManager();
-		add(upperShelf);
+		_upperShelf = new HorizontalFieldManager();
+		add(_upperShelf);
 		
-		JSONArray responseArray = null;
-		try {
-			responseArray = _api.callArray(ApiHelper.API_CURRENTUSER_URL, new Object[] {"photo_50"});
-		} catch (ApiException e) {
-			
-		}
+		_avatar = new BitmapField();
+		_upperShelf.add(_avatar);
 		
-		JSONObject profileInfoAvatar = null;
-		if (responseArray != null) {
-			try {
-				profileInfoAvatar = responseArray.getJSONObject(0);
-			}
-			catch (JSONException e) {
-				
-			}
-		}
-		
-		if (profileInfoAvatar != null) {
-			_avatar = new BitmapField();
-			upperShelf.add(_avatar);
-			
-			try {
-				RequestedImage avatar = new RequestedImage();
-				avatar.tag = "avatar";
-				avatar.url = profileInfoAvatar.getString("photo_50");
-				
-				ImageFetchThread.enqueue(avatar, this);
-			} catch (JSONException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-		}
-		
-		JSONObject profileInfo = null;
-		try {
-			profileInfo = _api.call(ApiHelper.API_PROFILEINFO_URL, null);
-		} catch (ApiException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		try {
-			_name = new LabelField(profileInfo.getString("first_name") + " " + profileInfo.getString("last_name"));
-			upperShelf.add(_name);
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		_name = new LabelField("Loading...");
+		_upperShelf.add(_name);
 		
 		_actionsList = new ListField();
 		_actionsList.setCallback(this);
 		_actionsList.setSize(_items.length);
 		add(_actionsList);
+		
+		RequestedApi request = new RequestedApi();
+		request.urlTemplate = ApiHelper.API_CURRENTUSER_URL;
+		request.callArgs = new Object[] {"photo_50"};
+		request.type = RequestedApi.ARRAY;
+		
+		ApiFetchThread.enqueue(request, this);
 	}
 	
 	protected boolean navigationClick(int status, int time) {
 		if ((status & KeypadListener.STATUS_FOUR_WAY) != 0) {
 			switch (_actionsList.getSelectedIndex()) {
 				case 0:
-					_app.pushScreen(new MessagesScreen());
+					_app.pushScreen(new ConversationsScreen());
 					break;
 				case 1:
 					_app.pushScreen(new FriendsScreen());
@@ -154,6 +117,47 @@ public class AppScreen extends VKScreen implements ListFieldCallback, Requesting
 					_name = padded;
 				}
 			});
+		}
+	}
+
+	public void setResponse(RequestedApi info, Object result) {
+		JSONArray responseArray = (JSONArray) result;
+		
+		JSONObject profileInfo = null;
+		if (responseArray != null) {
+			try {
+				profileInfo = responseArray.getJSONObject(0);
+			}
+			catch (JSONException e) {
+				
+			}
+		}
+		
+		if (profileInfo != null) {
+			try {
+				RequestedImage avatar = new RequestedImage();
+				avatar.tag = "avatar";
+				avatar.url = profileInfo.getString("photo_50");
+				
+				ImageFetchThread.enqueue(avatar, this);
+			} catch (JSONException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+				
+			try {
+				final String name = profileInfo.getString("first_name") + " " + profileInfo.getString("last_name");
+				
+				_app.invokeLater(new Runnable() {
+					public void run() {
+						_name.setText(name);
+						_upperShelf.invalidate();
+					}
+				});
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 }

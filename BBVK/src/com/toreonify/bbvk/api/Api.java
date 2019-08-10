@@ -32,7 +32,7 @@ public class Api {
 		return _instance;
 	}
 	
-	public JSONObject call(String urlTemplate, Object[] callArgs) throws ApiException {
+	private String getResponse(String urlTemplate, Object[] callArgs) throws ApiException {
 		Object[] urlArgs;
 		if (callArgs == null) {
 			urlArgs = new Object[] {_token};
@@ -62,6 +62,11 @@ public class Api {
 			throw new ApiException();
 		}
 		
+		return response;
+	}
+	
+	public JSONObject call(String urlTemplate, Object[] callArgs) throws ApiException {
+		String response = getResponse(urlTemplate, callArgs);
 		JSONObject jsonObject = null;
 		
 		try {
@@ -76,34 +81,7 @@ public class Api {
 	}
 	
 	public JSONArray callArray(String urlTemplate, Object[] callArgs) throws ApiException {
-		Object[] urlArgs;
-		if (callArgs == null) {
-			urlArgs = new Object[] {_token};
-		} else {
-			urlArgs = new Object[callArgs.length + 1];
-			urlArgs[0] = _token;
-			
-			System.arraycopy(callArgs, 0, urlArgs, 1, callArgs.length);
-		}
-		
-		String profileInfo = ApiHelper.formatApiCall(urlTemplate, urlArgs);	
-		String response = "";
-		HttpsConnection apiConnection = Utilities.makeConnection(profileInfo, null, null, null);
-		
-		try {
-			ByteArrayOutputStream result = new ByteArrayOutputStream();
-			InputStream is = apiConnection.openInputStream();
-			byte[] buffer = new byte[512];
-			int length;
-			while ((length = is.read(buffer)) != -1) {
-			    result.write(buffer, 0, length);
-			}
-			response = new String(result.toByteArray(), "UTF-8");
-		}
-		catch (IOException e) {
-			// TODO can't get response 
-			throw new ApiException();
-		}
+		String response = getResponse(urlTemplate, callArgs);
 		
 		JSONObject jsonObject = null;
 		JSONArray jsonArray = null;
